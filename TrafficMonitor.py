@@ -1,6 +1,7 @@
 import requests
 import re
 import datetime
+import time
 
 # get contents
 data = {'token': '96051eb7fd82b2c91a32ccdc4073e2381cbda956',\
@@ -22,58 +23,38 @@ cnt = cnt.replace(',', ',\n')
 cnt = cnt.replace('\u2740', ' ')
 
 # use cnt
-string = cnt
-result = ''
+toMB = lambda s : (1024*float(s[0:-2])) if s.find('G')!=-1 else float(s[0:-2])
+patterns = [r"(?<=已使用 \()(.+)(?=\))", r"(?<=上传 \()(.+)(?=\))", r"(?<=下载 \()(.+)(?=\))"]
+matches = []
+for pat in patterns:
+    match = re.search(pat, cnt)
+    if match:
+        matches.append(toMB(match.group()))
+    else:
+        print("No match")
 
-pattern = r"已使用 \(.*?(?=\))"
-match = re.search(pattern, string)
-if match:
-    result = result + match.group() + ')\n'
-else:
-    print("No match")
-
-pattern = r"上传 \(.*?(?=\))"
-match = re.search(pattern, string)
-if match:
-    result = result + match.group() + ')\n'
-else:
-    print("No match")
-
-pattern = r"下载 \(.*?(?=\))"
-match = re.search(pattern, string)
-if match:
-    result = result + match.group() + ')\n'
-else:
-    print("No match")
-
-file = open("H:/OneDrive - mail3.sysu.edu.cn/4-Function/ToolsKit/VPNinfo.txt", 'a')
-file.write(datetime.datetime.now().strftime('%Y-%m-%d  %H:%M'))
-file.write('\n' + result)
+# write csv
+file = open("YourPath/VPNinfo.csv", 'a')
+file.write(datetime.datetime.now().strftime('%Y/%m/%d %H:%M'))  # time for human reading
+file.write(',' + str(int(time.time())))  # timestamp
+for i in matches:
+    file.write(',' + str(i))
+file.write('\n')
 file.close()
 
 # # comparison - quicker
-# pattern = r"\((.*?)\)"
-# string = result
-# matches = re.findall(pattern, string)
-# 
-# for ind, x in enumerate(matches):
-#     if 'GB' in x:
-#         matches[ind] = (float(x[:-3]) * 1024)
-#     else:
-#         matches[ind] = (float(x[:-3]))
-# 
 # old = [0.0, 0.0, 0.0]
 # old[0] = quicker.context.GetVarValue('used')
 # old[1] = quicker.context.GetVarValue('upload')
 # old[2] = quicker.context.GetVarValue('download')
-# 
+
 # quicker.context.SetVarValue('used', matches[0])
 # quicker.context.SetVarValue('upload', matches[1])
 # quicker.context.SetVarValue('download', matches[2])
-# 
+
 # warning = 'none'
 # if (matches[0] - old[0] >= 1000):
-#     warning = 'Last hour used more than 1000MB.\n'
-# if (matches[1] > matches[2]):
-#     warning = warning + 'Abnormal Upload amount.'
+#     warning = 'Last hour used more than 1000MB.'
+# if (matches[1] - matches[1] >= 1000):
+#     warning = 'Abnormal Upload amount.'
 # quicker.context.SetVarValue('warning', warning)
